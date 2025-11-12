@@ -4,9 +4,9 @@ A scalable, production-ready backend API for collecting and analyzing website an
 
 ## Live Demo
 
-**Deployment URL:** [https://your-app.onrender.com](https://your-app.onrender.com) *(Update after deployment)*
+**Deployment URL:** [https://analyticsengine-production.up.railway.app](https://analyticsengine-production.up.railway.app)
 
-**API Documentation:** [https://your-app.onrender.com/api-docs](https://your-app.onrender.com/api-docs)
+**API Documentation:** [https://analyticsengine-production.up.railway.app/api-docs](https://analyticsengine-production.up.railway.app/api-docs)
 
 ## Features
 
@@ -383,9 +383,9 @@ MIT License - feel free to use this project for your own purposes.
 ## Author
 
 **Shafi Ahmed**
-- Email: your-email@example.com
-- GitHub: [@your-username](https://github.com/your-username)
-- LinkedIn: [Your Profile](https://linkedin.com/in/your-profile)
+- Email: shfahmd001@gmail.com
+- GitHub: [@ita004](https://github.com/ita004)
+- LinkedIn: [Shafi Ahmed](https://www.linkedin.com/in/shafi-ah01/)
 
 ## Acknowledgments
 
