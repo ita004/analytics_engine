@@ -7,9 +7,20 @@ dotenv.config();
 let redisClient: any;
 
 export const connectRedis = async (): Promise<any> => {
+  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+
+  // Log for debugging (hide password in production)
+  const maskedUrl = redisUrl.includes('@')
+    ? `redis://*****@${redisUrl.split('@')[1]}`
+    : redisUrl;
+  logger.info(`Attempting to connect to Redis: ${maskedUrl}`);
+
   const client = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: redisUrl,
     socket: {
+      // Add TLS support for Railway external connections
+      tls: redisUrl.includes('railway.app'),
+      rejectUnauthorized: false,
       reconnectStrategy: (retries) => {
         if (retries > 10) {
           logger.error('Redis reconnection failed after 10 attempts');
@@ -25,7 +36,7 @@ export const connectRedis = async (): Promise<any> => {
   });
 
   client.on('connect', () => {
-    logger.info('Redis connected successfully');
+    logger.info('✅ Redis connected successfully');
   });
 
   client.on('reconnecting', () => {
