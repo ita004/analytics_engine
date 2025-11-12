@@ -167,23 +167,90 @@ docker run -p 3000:3000 \
 | GET | `/api/analytics/user-stats` | Get user statistics | Yes (Session) |
 | GET | `/api/analytics/dashboard` | Get dashboard overview | Yes (Session) |
 
-## Usage Examples
+## Testing the Live API
 
-### 1. Register and Get API Key
+### 🔑 Test API Key for Reviewers
 
-First, authenticate with Google OAuth:
+For immediate testing, use this pre-configured API key:
 ```
-GET http://localhost:3000/api/auth/google
+test-key-1847986267fc58d71b104454f01015ad
 ```
 
-Then register your app:
+This key is already active and ready to collect events!
+
+### Quick Test (No Authentication Required)
+
+**1. Health Check**
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+curl https://analyticsengine-production.up.railway.app/
+```
+
+**2. Test Event Collection**
+```bash
+curl -X POST https://analyticsengine-production.up.railway.app/api/analytics/collect \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: test-key-1847986267fc58d71b104454f01015ad" \
+  -d '{
+    "event": "button_click",
+    "url": "https://example.com/page",
+    "device": "desktop",
+    "metadata": {"button": "signup"}
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Event collected successfully",
+  "data": {
+    "id": "uuid",
+    "created_at": "timestamp"
+  }
+}
+```
+
+**3. View API Documentation**
+Visit: [https://analyticsengine-production.up.railway.app/api-docs](https://analyticsengine-production.up.railway.app/api-docs)
+
+### Full Authentication Flow
+
+**Step 1: Login with Google OAuth**
+1. Visit: https://analyticsengine-production.up.railway.app/api/auth/google
+2. Login with your Google account
+3. You'll be redirected back and a session will be created
+
+**Step 2: Register Your App** (Requires session from Step 1)
+```bash
+curl -X POST https://analyticsengine-production.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -H "Cookie: connect.sid=your_session_cookie" \
   -d '{
-    "app_name": "My Awesome App",
+    "app_name": "My App",
     "app_domain": "https://myapp.com"
+  }'
+```
+
+**Note:** Session-based endpoints (register, analytics queries) require Google OAuth login first. The session cookie is automatically handled by browsers but needs to be manually passed in curl/Postman.
+
+## Usage Examples
+
+### 1. Collect Analytics Event
+
+```bash
+curl -X POST https://analyticsengine-production.up.railway.app/api/analytics/collect \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key_here" \
+  -d '{
+    "event": "page_view",
+    "url": "https://myapp.com/homepage",
+    "referrer": "https://google.com",
+    "device": "mobile",
+    "user_id": "user123",
+    "metadata": {
+      "browser": "Chrome",
+      "os": "iOS"
+    }
   }'
 ```
 
@@ -191,37 +258,15 @@ Response:
 ```json
 {
   "success": true,
-  "message": "API key generated successfully",
+  "message": "Event collected successfully",
   "data": {
-    "id": "uuid",
-    "app_name": "My Awesome App",
-    "api_key": "your_api_key_here",
-    "expires_at": "2025-11-12T00:00:00.000Z"
+    "id": "729fa66d-1682-4d50-9de5-da3ed43f9b6b",
+    "created_at": "2025-11-12T18:57:08.846Z"
   }
 }
 ```
 
-### 2. Collect Analytics Event
-
-```bash
-curl -X POST http://localhost:3000/api/analytics/collect \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: your_api_key_here" \
-  -d '{
-    "event": "login_form_cta_click",
-    "url": "https://myapp.com/login",
-    "referrer": "https://google.com",
-    "device": "mobile",
-    "user_id": "user123",
-    "metadata": {
-      "browser": "Chrome",
-      "os": "Android",
-      "screenSize": "1080x1920"
-    }
-  }'
-```
-
-### 3. Get Event Summary
+### 2. Get Event Summary
 
 ```bash
 curl -X GET "http://localhost:3000/api/analytics/event-summary?event=login_form_cta_click&startDate=2024-01-01&endDate=2024-12-31" \
@@ -244,7 +289,7 @@ Response:
 }
 ```
 
-### 4. Get User Statistics
+### 3. Get User Statistics
 
 ```bash
 curl -X GET "http://localhost:3000/api/analytics/user-stats?userId=user123" \
@@ -300,42 +345,28 @@ npm run test:watch
 
 ## Challenges Faced and Solutions
 
-### Challenge 1: High-Volume Event Ingestion
-**Problem:** Need to handle thousands of events per second without performance degradation.
+### Challenge 1: Railway Deployment Configuration
+**Problem:** Redis connection failing with `ECONNREFUSED` and 502 errors on Railway.
 
 **Solution:**
-- Implemented connection pooling for database
-- Added Redis caching layer
-- Used indexed columns for fast writes
-- Optimized database schema with composite indexes
+- Used Railway's variable reference system for Redis URL instead of hardcoded values
+- Fixed port mismatch by setting PORT environment variable to 3000
+- Added connection logging to debug issues
 
-### Challenge 2: Complex Aggregation Queries
-**Problem:** Event summary queries were slow with millions of records.
-
-**Solution:**
-- Created materialized views for pre-computed aggregations
-- Implemented Redis caching with smart invalidation
-- Used efficient SQL with proper joins and group by clauses
-- Added query optimization with parameterized inputs
-
-### Challenge 3: Authentication Flow
-**Problem:** Balancing security with ease of integration.
+### Challenge 2: TypeScript Build Errors
+**Problem:** Strict TypeScript settings causing Docker build failures.
 
 **Solution:**
-- Google OAuth for user authentication (secure and convenient)
-- API key system for programmatic access
-- Separate auth mechanisms for different use cases
-- Session management with secure cookies
+- Adjusted tsconfig.json to balance type safety with build compatibility
+- Used underscore prefix for intentionally unused parameters
 
-### Challenge 4: Scalability
-**Problem:** System needs to scale horizontally for growth.
+### Challenge 3: Database Performance
+**Problem:** Slow queries with large datasets.
 
 **Solution:**
-- Stateless API design
-- Docker containerization
-- Redis for distributed caching
-- Database connection pooling
-- Prepared for load balancing
+- Added composite indexes on frequently queried columns
+- Implemented Redis caching with TTL
+- Created materialized views for heavy aggregations
 
 ## Future Enhancements
 
